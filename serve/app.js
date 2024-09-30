@@ -16,7 +16,6 @@ app.use(function (req, res, next) {
   }
   next()
 })
-
 app.use(detail)
 app.use(cors())
 //配置解析表单的中间件

@@ -4,13 +4,15 @@ const bcrypt = require('bcryptjs');
 const db = require('../db/index');
 const jwt = require('jsonwebtoken')
 const config = require('../config')
+const uuid = require('uuid');
 module.exports.regUser = (req,res)=>{
     //获取客户端提供的用户数据
     const userinfo = req.body
+    
     if(!userinfo.username || !userinfo.password){
         return res.send({status:1,message:'用户名或者密码不能为空'})
     } 
-    let sqlStr = `select * from admin where username=?`;
+    let sqlStr = `select * from users where username=?`;
     db.query(sqlStr,userinfo.username,(err,results)=>{
         if(err){
             return res.send({status:1,message:err.message})
@@ -21,8 +23,8 @@ module.exports.regUser = (req,res)=>{
     })
     //调用bcrpyt.hashSync()对密码进行加密
     userinfo.password = bcrypt.hashSync(userinfo.password,10);
-    let insertSql = 'insert into admin set ?';
-    db.query(insertSql,{username:userinfo.username,password:userinfo.password},(err,results)=>{
+    let insertSql = 'insert into users set ?';
+    db.query(insertSql,{id: uuid.v1(),username:userinfo.username,password:userinfo.password,user: userinfo.username},(err,results)=>{
         if(err){
             return res.cc(err)
         } 
@@ -34,7 +36,7 @@ module.exports.regUser = (req,res)=>{
 }
 exports.login = (req,res)=>{
     const userinfo = req.body;
-    const sql = `select * from admin where username=?`;
+    const sql = `select * from users where username=?`;
     db.query(sql,userinfo.username,(err,results)=>{
         if(err){
             return res.cc(err)
