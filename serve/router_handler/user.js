@@ -31,7 +31,7 @@ module.exports.regUser = (req,res)=>{
         if(results.affectedRows !== 1){
             return res.send({status:1,message:'注册失败'})
         }
-        res.send('成功')
+        res.send({status: 0, message: '成功'})
 })
 }
 exports.login = (req,res)=>{
