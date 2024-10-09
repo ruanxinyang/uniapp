@@ -37,6 +37,7 @@ module.exports.regUser = (req,res)=>{
 exports.login = (req,res)=>{
     const userinfo = req.body;
     const sql = `select * from users where username=?`;
+    
     db.query(sql,userinfo.username,(err,results)=>{
         if(err){
             return res.cc(err)
@@ -50,10 +51,40 @@ exports.login = (req,res)=>{
        const user = {...results[0],password:'',user_pic:''} 
        //对用户名的信息进行加密
        const tokenStr = jwt.sign(user,config.jwtSecreKey,{expiresIn:'10h'})
-       res.send({status:0,message:'登录成功',
-        token:tokenStr
-    })
-    })
+       const sql2= `update users set token = '${tokenStr}' where username = '${userinfo.username}'`;
+       
+       db.query(sql2,(err,results)=>{
+        if(err){
+            return res.cc(err)
+        }
+        if(results.affectedRows !==1)return res.cc('登录失败')
+            res.send({status:0,message:'登录成功',
+                token:tokenStr
+            })
+       })
 
+    })   
+}
+exports.exit = (req,res)=>{
+    const userinfo = req.body;
+    const sql = `select * from users where username= '${userinfo.username}'`;
+    console.log(sql);
     
+    db.query(sql,(err,results)=>{
+        if(err){
+            return res.cc(err)
+        }
+        console.log(results);
+        if(results.length !==1)return res.cc('用户不存在')
+        const sql2 = `update users set token = '' where username = ${db.escape(userinfo.username)}`;
+        console.log(sql2);
+        
+    db.query(sql2,(err,results)=>{
+        if(err){
+            return res.cc(err)
+        }
+        if(results.affectedRows !==1)return res.cc('退出失败')
+        res.send({status:0,message:'退出成功'})
+    })
+    })   
 }
