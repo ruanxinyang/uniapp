@@ -68,7 +68,6 @@ exports.login = (req,res)=>{
 exports.exit = (req,res)=>{
     const userinfo = req.body;
     const sql = `select * from users where username= '${userinfo.username}'`;
-    console.log(sql);
     
     db.query(sql,(err,results)=>{
         if(err){
@@ -77,7 +76,6 @@ exports.exit = (req,res)=>{
         console.log(results);
         if(results.length !==1)return res.cc('用户不存在')
         const sql2 = `update users set token = '' where username = ${db.escape(userinfo.username)}`;
-        console.log(sql2);
         
     db.query(sql2,(err,results)=>{
         if(err){
