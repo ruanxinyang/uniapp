@@ -58,7 +58,7 @@ exports.login = (req,res)=>{
             return res.cc(err)
         }
         if(results.affectedRows !==1)return res.cc('登录失败')
-            res.send({status:0,message:'登录成功',
+            res.send({status:200,message:'登录成功',
                 token:tokenStr
             })
        })
@@ -82,7 +82,34 @@ exports.exit = (req,res)=>{
             return res.cc(err)
         }
         if(results.affectedRows !==1)return res.cc('退出失败')
-        res.send({status:0,message:'退出成功'})
+        res.send({status:200,message:'退出成功'})
     })
     })   
+}
+exports.run = (req,res)=>{
+    const data = req.body;
+    const { actionNameEn, actionNameCn, orgCode, params } = data;
+    const sql = `select * from action_sql where sql_id = '${actionNameEn}' and sql_name = '${actionNameCn}' and s_org_code = '${orgCode}'`;    
+    const buildQuery = (template, params) => {
+        // 将 params 转换为一个键值对对象
+        const paramMap = Object.fromEntries(params.map(param => [param.key, param.value]));
+        return template.replace(/{{(\w+)}}/g, (match, key) => {
+            // 返回 paramMap 中对应键的值，未找到时返回空字符串
+            return key in paramMap ? `'${paramMap[key]}'` : '';
+        });
+    }
+    db.query(sql,(err,results)=>{
+        if(err){
+            return res.cc(err)
+        }
+        if(results.length > 0){
+            let query = buildQuery(results[0].sql, params);
+            db.query(query, (queryErr, queryResults) =>{
+                if(queryErr){
+                    return res.cc(queryErr)
+                }
+                res.send({status:200,data:queryResults})
+            })
+        }else{return res.cc(results)}
+    })
 }

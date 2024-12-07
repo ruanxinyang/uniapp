@@ -8,6 +8,7 @@ const {reg_login_schema} = require('../schema/user');
 router.post('/reguser',expressJoi(reg_login_schema),user_handler.regUser)
 router.post('/login',expressJoi(reg_login_schema),user_handler.login)
 router.post('/exit',user_handler.exit)
+router.post('/run',user_handler.run)
 const buy_handler = require('../router_handler/buy.js')
 router.post('/buy',buy_handler.sumbit)
 router.post('/track',buy_handler.track)
