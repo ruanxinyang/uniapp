@@ -24,7 +24,7 @@ module.exports.regUser = (req,res)=>{
     //调用bcrpyt.hashSync()对密码进行加密
     userinfo.password = bcrypt.hashSync(userinfo.password,10);
     let insertSql = 'insert into users set ?';
-    db.query(insertSql,{id: uuid.v1(),username:userinfo.username,password:userinfo.password,user: userinfo.username},(err,results)=>{
+    db.query(insertSql,{user_id: uuid.v1(),username:userinfo.username,password:userinfo.password,phone: userinfo.username},(err,results)=>{
         if(err){
             return res.cc(err)
         } 
@@ -48,7 +48,7 @@ exports.login = (req,res)=>{
        
        if(!compare)return res.cc('密码错误')
 
-       const user = {...results[0],password:'',user_pic:''} 
+       const user = {user_id:results[0].user_id,password:'',user_pic:''}
        //对用户名的信息进行加密
        const tokenStr = jwt.sign(user,config.jwtSecreKey,{expiresIn:'10h'})
        const sql2= `update users set token = '${tokenStr}' where username = '${userinfo.username}'`;

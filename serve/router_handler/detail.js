@@ -1,13 +1,13 @@
 const db = require('../db/index')
 
 exports.getDetailList = (req,res) =>{
-    const sql ='select * from product'
+    const sql ='select commodity_name,commodity_id,retail_price,picture,commodity_type_id from product'
     db.query(sql,(err,results)=>{
         if(err) return res.cc(err)
         
 
 const ordersByOrderId = results.reduce((acc, item) => {
-  const orderId = item.product_category
+  const orderId = item.commodity_type_id
   if (!acc[orderId]) {
     acc[orderId] = {
       class_id: orderId,
@@ -15,18 +15,17 @@ const ordersByOrderId = results.reduce((acc, item) => {
     }
   }
   acc[orderId].goods.push({
-      product_id:item.product_id,
-      product_name:item.product_name,
-      price:item.price,
-      product_items:item.product_items,
-      image_url:item.image_url
+      product_id:item.commodity_id,
+      product_name:item.commodity_name,
+      price:item.retail_price,
+      image_url:item.picture
   })
   return acc
 }, {})
 
 
         res.send({
-            status:0,
+            status:200,
             message:'获取商品列表成功',
             data:Object.values(ordersByOrderId)
         })
