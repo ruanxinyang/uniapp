@@ -10,15 +10,15 @@ module.exports.regUser = (req,res)=>{
     const userinfo = req.body
     
     if(!userinfo.username || !userinfo.password){
-        return res.send({status:1,message:'用户名或者密码不能为空'})
+        return res.send({status:404,message:'用户名或者密码不能为空'})
     } 
     let sqlStr = `select * from users where username=?`;
     db.query(sqlStr,userinfo.username,(err,results)=>{
         if(err){
-            return res.send({status:1,message:err.message})
+            return res.send({status:404,message:err.message})
         }
         if(results.length>0){
-            return res.send({status:1,message:'用户名被占用'})
+            return res.send({status:404,message:'用户名被占用'})
         }
     })
     //调用bcrpyt.hashSync()对密码进行加密
@@ -29,7 +29,7 @@ module.exports.regUser = (req,res)=>{
             return res.cc(err)
         } 
         if(results.affectedRows !== 1){
-            return res.send({status:1,message:'注册失败'})
+            return res.send({status:404,message:'注册失败'})
         }
         res.send({status: 0, message: '成功'})
 })
