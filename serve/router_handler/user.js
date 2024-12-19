@@ -58,38 +58,46 @@ module.exports.regUser = (req,res)=>{
 exports.login = (req,res)=>{
     const userinfo = req.body;
     const sql = `select * from users where username=?`;
+    if(!userinfo.username|| !userinfo.password){
+        return res.send({status:404,message:'用户名或者密码不能为空'})
+    }
+    try{
+        db.query(sql,userinfo.username,(err,results)=>{
+            if(err){
+                return res.cc(err)
+            }
+            if(results.length !==1)return res.cc('账号或密码错误')
+            //判断密码是否正确
+           const compare = bcrypt.compareSync(userinfo.password,results[0].password.toString())
+           
+           if(!compare)return res.cc('密码错误')
     
-    db.query(sql,userinfo.username,(err,results)=>{
-        if(err){
-            return res.cc(err)
-        }
-        if(results.length !==1)return res.cc('账号或密码错误')
-        //判断密码是否正确
-       const compare = bcrypt.compareSync(userinfo.password,results[0].password.toString())
-       
-       if(!compare)return res.cc('密码错误')
-
-       const user = {user_id:results[0].user_id,password:'',user_pic:''}
-       //对用户名的信息进行加密
-       const tokenStr = jwt.sign(user,config.jwtSecreKey,{expiresIn:'10h'})
-       const sql2= `update users set token = '${tokenStr}' where username = '${userinfo.username}'`;
-       
-       db.query(sql2,(err,results)=>{
-        if(err){
-            return res.cc(err)
-        }
-        if(results.affectedRows !==1)return res.cc('登录失败')
-            res.send({status:200,message:'登录成功',
-                token:tokenStr
-            })
-       })
-
-    })   
+           const user = {user_id:results[0].user_id,password:'',user_pic:''}
+           //对用户名的信息进行加密
+           const tokenStr = jwt.sign(user,config.jwtSecreKey,{expiresIn:'10h'})
+           const sql2= `update users set token = '${tokenStr}' where username = '${userinfo.username}'`;
+           
+           db.query(sql2,(err,results)=>{
+            if(err){
+                return res.cc(err)
+            }
+            if(results.affectedRows !==1)return res.cc('登录失败')
+                res.send({status:200,message:'登录成功',
+                    token:tokenStr
+                })
+           })
+    
+        }) 
+    }catch(err){
+    }
+      
 }
 exports.exit = (req,res)=>{
     const userinfo = req.body;
     const sql = `select * from users where username= '${userinfo.username}'`;
-    
+    if(!userinfo.username|| !userinfo.password){
+        return res.send({status:404,message:'用户不存在'})
+    }
     db.query(sql,(err,results)=>{
         if(err){
             return res.cc(err)
@@ -112,6 +120,9 @@ exports.run = (req,res)=>{
     const callback = (results)=>{
         try{
             const { actionNameEn, actionNameCn, orgCode, params } = data;
+            if(!actionNameEn || !actionNameCn || !orgCode || !params || !Array.isArray(params)){
+                return res.cc('参数不合法')
+            }
             const sql = `select * from action_sql where sql_id = '${actionNameEn}' and sql_name = '${actionNameCn}' and s_org_code = '${orgCode}' and s_is_del = 1`;            
             const buildQuery = (template, params) => {
                 // 将 params 转换为一个键值对对象
