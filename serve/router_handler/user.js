@@ -5,6 +5,27 @@ const db = require('../db/index');
 const jwt = require('jsonwebtoken')
 const config = require('../config')
 const uuid = require('uuid');
+const checkToken = (token, callback,res) => {
+    if (!token) {
+        return res.send({ status: 404, message: '暂无权限' })
+    }
+    try{
+        let sqlStr = `select username from users where token=?`;
+        db.query(sqlStr, token, (err, results) => {
+            if (err) {
+                
+                return res.send({ status: 404, message: err })
+            }
+            if (results.length <= 0) {
+                return res.send({ status: 404, message: '暂无权限' })
+            } else {
+                callback(results)
+            }
+        })
+    }catch(err){
+        return res.send({status:404,message:err})
+    }
+}
 module.exports.regUser = (req,res)=>{
     //获取客户端提供的用户数据
     const userinfo = req.body
@@ -88,28 +109,36 @@ exports.exit = (req,res)=>{
 }
 exports.run = (req,res)=>{
     const data = req.body;
-    const { actionNameEn, actionNameCn, orgCode, params } = data;
-    const sql = `select * from action_sql where sql_id = '${actionNameEn}' and sql_name = '${actionNameCn}' and s_org_code = '${orgCode}'`;    
-    const buildQuery = (template, params) => {
-        // 将 params 转换为一个键值对对象
-        const paramMap = Object.fromEntries(params.map(param => [param.key, param.value]));
-        return template.replace(/{{(\w+)}}/g, (match, key) => {
-            // 返回 paramMap 中对应键的值，未找到时返回空字符串
-            return key in paramMap ? `'${paramMap[key]}'` : '';
-        });
-    }
-    db.query(sql,(err,results)=>{
-        if(err){
-            return res.cc(err)
-        }
-        if(results.length > 0){
-            let query = buildQuery(results[0].sql, params);
-            db.query(query, (queryErr, queryResults) =>{
-                if(queryErr){
-                    return res.cc(queryErr)
+    const callback = (results)=>{
+        try{
+            const { actionNameEn, actionNameCn, orgCode, params } = data;
+            const sql = `select * from action_sql where sql_id = '${actionNameEn}' and sql_name = '${actionNameCn}' and s_org_code = '${orgCode}' and s_is_del = 1`;            
+            const buildQuery = (template, params) => {
+                // 将 params 转换为一个键值对对象
+                const paramMap = Object.fromEntries(params.map(param => [param.key, param.value]));
+                return template.replace(/{{(\w+)}}/g, (match, key) => {
+                    // 返回 paramMap 中对应键的值，未找到时返回空字符串
+                    return key in paramMap ? `'${paramMap[key]}'` : '';
+                });
+            }
+            db.query(sql,(err,results)=>{
+                if(err){
+                    return res.cc(err)
                 }
-                res.send({status:200,data:queryResults})
+                if(results.length > 0){
+                    let query = buildQuery(results[0].sql, params);
+                    db.query(query, (queryErr, queryResults) =>{
+                        if(queryErr){
+                            return res.cc(queryErr)
+                        }
+                        res.send({status:200,data:queryResults})
+                    })
+                }else{return res.cc(results)}
             })
-        }else{return res.cc(results)}
-    })
+        }catch(err){
+            return res.send({status:404,message:err})
+        }
+    }
+    checkToken(data.token,callback,res)
+
 }
